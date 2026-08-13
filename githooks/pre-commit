@@ -1,0 +1,75 @@
+#!/bin/sh
+# =====================================================================
+# pre-commit — oya-iru-wiki（配布テンプレート版）
+#
+# このリポジトリは実在個人の子育て記録を扱う Vault の仮名化層である。
+# git 履歴に一度入った個人情報は事実上消せないため、コミット前に
+# 機械的なゲートを通す。ゲートを通らないコミットは作らせない。
+#
+# 設置: 2026-08-13 / 関連: schema.md §5, AGENTS.md §2・§5
+# 土台: oya-inai-keikaku-soudan/githooks/pre-commit（関所2 の対象型を
+#       本Vaultの個人紐づけ型 koe / sentaku / fushime に差し替え）
+# =====================================================================
+
+set -e
+
+ROOT=$(git rev-parse --show-toplevel)
+cd "$ROOT"
+
+fail() {
+    printf '\n\033[31m✖ コミットを中止しました\033[0m\n%s\n\n' "$1" >&2
+    exit 1
+}
+
+# --- 関所1: raw/ の混入 ----------------------------------------------
+# .gitignore で除外しているが、git add -f で貫通できてしまう。
+# raw/ は実名・連絡先・日記・原本資料の層なので、いかなる経路でも履歴に入れない。
+# 棚の README だけは骨格として許可する。
+# core.quotepath=false: 日本語の棚名（raw/40_医療から/ 等）がエスケープされて
+# grep '^raw/' をすり抜けるのを防ぐ（2026-08-13 関所テストで検出した穴）
+STAGED_RAW=$(git -c core.quotepath=false diff --cached --name-only --diff-filter=ACM | grep '^raw/' | grep -v '^raw/[^/]*/README\.md$' || true)
+if [ -n "$STAGED_RAW" ]; then
+    fail "raw/ 配下のファイルがステージされています。ここは実名・連絡先・日記を置く層で、
+git 履歴に入れてはいけません（一度入ると削除が極めて困難）。
+
+$STAGED_RAW
+
+  取り消す: git restore --staged raw/"
+fi
+
+# --- 関所2: remote × 実データ ----------------------------------------
+# テンプレートの配布・受け取りには remote が要る（GitHub から clone する）。
+# 一方、実在個人のページを持ち始めた Vault が remote を持つのは危険。
+# そこで「remote があり、かつ個人に紐づくページが存在する」ときだけ止める。
+# 実データの運用に入ったら remote を外すか private に切り替えること。
+if [ -n "$(git remote)" ]; then
+    PERSONAL=$(git -c core.quotepath=false ls-files 'wiki/persons/*.md' 'wiki/koe/*.md' 'wiki/sentaku/*.md' 'wiki/fushime/*.md' 'wiki/trials/*.md' 'wiki/protocols/*.md' 'wiki/triggers/*.md' 'wiki/ecomaps/*.md' 'wiki/sensitive/*.md' 'wiki/sensitive/restricted/*.md' 2>/dev/null || true)
+    STAGED_PERSONAL=$(git -c core.quotepath=false diff --cached --name-only --diff-filter=ACM | grep -E '^wiki/(persons|koe|sentaku|fushime|trials|protocols|triggers|ecomaps|sensitive)/' || true)
+    if [ -n "$PERSONAL" ] || [ -n "$STAGED_PERSONAL" ]; then
+        fail "remote が設定された状態で、個人に紐づくページをコミットしようとしています。
+
+  remote: $(git remote -v | head -1)
+
+実データの運用に入った Vault は remote を持たない設計です（誤 push を構造的に防ぐため）。
+  remote を外す: git remote remove origin
+  または、リポジトリを private に切り替えたうえで本フックの関所2を編集してください。"
+    fi
+fi
+
+# --- 関所3: okf_lint の機微ゲート ------------------------------------
+if [ -f scripts/okf_lint.py ]; then
+    if ! python3 scripts/okf_lint.py --gate; then
+        fail "okf_lint の機微ゲートが ERROR を検出しました（上記参照）。
+
+機微情報の漏出リスクが未解消のままコミットすることはできません。
+ERROR を解消してから再度 commit してください。
+
+  詳細を見る: python3 scripts/okf_lint.py"
+    fi
+else
+    fail "scripts/okf_lint.py が見つかりません。
+ゲートを通さずにコミットすることはできません。"
+fi
+
+printf '\033[32m✓ ゲート通過\033[0m（raw/ 混入なし・remote×実データなし・機微ゲート合格）\n'
+exit 0
