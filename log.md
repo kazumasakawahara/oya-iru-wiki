@@ -21,6 +21,22 @@
 - 公開前 PII 最終点検（git 追跡88ファイル機械走査）: raw=棚README のみ／wiki=.gitkeep のみ／記入例 person_id=P_9xx のみ／電話・メール・郵便パターンなし／gate 0 — すべて PASS。検出1件: PLAN.md・HANDOVER.md（開発メタ文書）に作者ローカルパス → 公開範囲の論点としてレビューへ
 - レビュー決着（2026-08-13 河原さん）: 著作権者=特定非営利活動法人 nest／開発メタ文書は公開物に含めない（クリーンエクスポート方式で公開する。手順は docs/phase5-implementation-plan.md）／公開タイミングは別途判断（今回は公開せず）
 
+## 2026-08-13 | publish | GitHub 公開＋nest-webpage 掲載（河原さん承認）
+- nest-webpage「親なき後」ツール・しくみへの掲載構成案を河原さんが承認 → 公開実行
+- クリーンエクスポート（85ファイル・開発メタ6件除外）→ エクスポート先で PII 再点検（作者パス含めゼロ、lint テストの意図的フィクスチャのみ）→ https://github.com/kazumasakawahara/oya-iru-wiki を public で作成・push
+- 親のための完全導入マニュアルの clone URL を実 URL に更新（両リポジトリ）
+- nest-webpage（ブランチ feat/oya-iru-wiki-family）: ツールページ2部構成化（ご家族の方へ=話す→編まれる→手渡す＋「日記からつくる、わが子のバイブル」カード／橋渡し文／支援者3段は不変）・マニュアル HTML 同梱・ハブ予告文更新・免責ページ追記。ビルド green・成果物検証 10項目 OK・スクリーンショット目視確認。本番デプロイは河原さんの指示待ち
+
+## 2026-08-13 | build | くわしい手順書4冊（初心者向けテーマ別ガイド。河原さん指示）
+- docs/くわしい手順/ に4冊新設: ①テンプレートを手に入れる（GitHub・ZIP中心・登録不要）②Obsidianを入れてVaultとして開く ③Claudeを用意してフォルダを見せる（学習ポリシー確認・MCP・完全終了）④黒い画面をこわがらない（lint・chmod・hooksPath をコピペで）
+- 親のための完全導入マニュアル（読み方＋3-1・3-2・第4章・5-1）と導入手順（冒頭＋Step 1〜3）に 🔰 リンクを差し込み
+- HTML 版5本（マニュアル再生成＋手順書4冊）を nest-webpage /internal/ に生成。文書間 .md リンクは .html へ機械的に書き換え（残存ゼロを検証）・スクリーンショット目視確認
+
+## 2026-08-14 | build | ラッパースキル同梱（河原さん発案・承認）
+- `.claude/skills/` と `.codex/skills/` に同一内容の薄いスキル3つを新設: oya-iru-ingest / oya-iru-query / oya-iru-lint
+- スキルは AGENTS.md の該当節（§3-1・§3-2・§3-3）へ誘導するだけの着火装置。手順の正典は AGENTS.md 一箇所のまま（PLAN §12-9 に設計判断を記録）
+- AGENTS.md §9 と README「AI について」に同梱の旨を追記
+
 ## （導入日を記入） | setup | Vault 導入
 - oya-iru-wiki テンプレートから導入。
 - 実施: lint 初回実行 / pre-commit 有効化 / AGENTS.md 環境調整（スケジュールタスク登録）→ docs/導入手順.md

@@ -49,6 +49,8 @@
 
 AI への指示書の正典は **`AGENTS.md`**（ベンダー中立）です。`CLAUDE.md`・`GEMINI.md` は AGENTS.md へ誘導する1行シムです。安全装置（lint・関所）は AI 非依存で、どの AI が書いたページも同じ基準で fail-closed 検査されます。
 
+スキル対応のエージェント（Claude Code・Codex CLI など）向けに、`.claude/skills/` と `.codex/skills/` へ薄いスキル3つ（取り込み ingest／照会 query／点検 lint）を同梱しています。中身は AGENTS.md の該当節へ誘導するだけの着火装置で、手順の正典は AGENTS.md のままです。スキル非対応の環境では単に無視されます。
+
 ### 動作確認済み AI
 
 | AI エージェント | 状態 |
