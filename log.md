@@ -64,6 +64,14 @@
 - 旧ファイル `記入例/日記と資料の例/2_連絡帳の写し_園から_P_900.md` は退避のうえ **2026-08-14 に河原さんが削除済み**（削除確認済み）
 - **purpose.md A-11 の文言は 2026-08-14 に河原さんレビュー承認**（「これで十分です」）
 
+## 2026-08-14 | publish | 下流2つへ反映（公開リポジトリ＋nest-webpage 本番）
+- 河原さんの指摘「本番ページに反映されていないのでは？」を受けて実施。配布物を直したのに下流へ流していなかった
+- 開発リポジトリをコミット（4a8a774）
+- 公開コピー `~/Dev-Work/oya-iru-wiki-public` へクリーンエクスポート方式で再反映（13点）。公開前点検 ALL PASS（raw=棚READMEのみ／wiki=.gitkeepのみ／記入例は P_9xx のみ／連絡先・作者パスなし／lint --gate 0／回帰テスト green）→ GitHub へ push（dab6fec）
+- nest-webpage: 親向け HTML 6本を再生成し本番デプロイ（f307eb5）。post-parent.ts の「手順書4冊」→「5冊」も更新
+- **恒久対策**: 再生成が scratchpad の使い捨てスクリプト頼みだったのが流し忘れの原因。nest-webpage に `scripts/build-oya-iru-html.py` を新設して手順を固定（`--check` で差分確認のみも可）。HANDOVER 次タスクDに具体手順を明記
+- 本番確認: /internal/oya-iru-wiki-guide-05-smartphone.html が「全5冊の5冊目」で表示、マニュアルに 7-2「写真で入れた書類はどうなるか」と 4-1 のクラウド既定、ツールページに「手順書5冊」を確認
+
 ## （導入日を記入） | setup | Vault 導入
 - oya-iru-wiki テンプレートから導入。
 - 実施: lint 初回実行 / pre-commit 有効化 / AGENTS.md 環境調整（スケジュールタスク登録）→ docs/導入手順.md
