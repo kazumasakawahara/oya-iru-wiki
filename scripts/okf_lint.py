@@ -423,7 +423,63 @@ def lint():
     # --- ★ 日記凍結検査（ハッシュ台帳方式。wiki/ ではなく raw/10_日記/ を見る唯一の検査）
     check_diary_freeze(warns, infos, today)
 
+    # --- ★ 原本と読み取りの対応検査（schema.md §7。raw/20〜90 を見る）
+    check_raw_readings(warns, infos)
+
     return errors, warns, infos, allowlist, stats
+
+
+# --- schema.md §7 原本と読み取りの分離 -----------------------------------
+RAW_BINARY_EXT = {
+    ".jpg", ".jpeg", ".png", ".heic", ".heif", ".webp",
+    ".tiff", ".tif", ".gif", ".bmp", ".pdf",
+}
+
+
+def check_raw_readings(warns, infos):
+    """raw/20〜90 の非テキスト原本に読み取りファイルが対であるかを見る（schema.md §7）。
+
+    raw/ は git 管理外のため、この検査はローカル実行時にのみ意味を持つ。
+    取りこぼしの発見が目的であり、機微情報の漏出ではないので WARN 止まり。
+    日記（raw/10_日記）は §7-2 により対象外。
+    """
+    raw = os.path.join(VAULT, "raw")
+    if not os.path.isdir(raw):
+        return
+    missing = 0
+    orphan = 0
+    for shelf in sorted(os.listdir(raw)):
+        if shelf.startswith(".") or shelf.startswith("10_"):
+            continue
+        d = os.path.join(raw, shelf)
+        if not os.path.isdir(d):
+            continue
+        for root, _dirs, files in os.walk(d):
+            names = set(files)
+            for f in sorted(files):
+                if f.startswith("."):
+                    continue
+                rel = os.path.relpath(os.path.join(root, f), VAULT)
+                if f.endswith(".読み取り.md"):
+                    origin = f[: -len(".読み取り.md")]
+                    if origin not in names:
+                        warns.append(
+                            f"[読み取り] {rel}: 対応する原本 `{origin}` がない"
+                            "（原本のない読み取りは出所のない伝聞。schema.md §7-5）"
+                        )
+                        orphan += 1
+                    continue
+                if os.path.splitext(f)[1].lower() not in RAW_BINARY_EXT:
+                    continue
+                if f + ".読み取り.md" not in names:
+                    warns.append(
+                        f"[読み取り] {rel}: 読み取り `{f}.読み取り.md` がない（schema.md §7-3）"
+                    )
+                    missing += 1
+    if missing:
+        infos.append(f"[読み取り] 読み取り未生成の原本 {missing} 件 — 次の ingest で生成する")
+    if orphan:
+        infos.append(f"[読み取り] 原本のない読み取り {orphan} 件 — 原本の所在を確認する")
 
 
 def main():
