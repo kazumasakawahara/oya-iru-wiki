@@ -79,6 +79,14 @@
 - **陳腐化する数字を削除**: 「くわしい手順書 全N冊」を各手順書フッター・マニュアル・導入手順・post-parent.ts から削除（05 のフッターも追加して体裁を統一）。前回⑤を足した際、4本のフッターが「全4冊」のまま残っていた＝実証済みの腐り方
 - **下流反映を1コマンド化**: `scripts/release.sh`（--check 既定／--apply／--publish）。除外リスト・公開前点検・HTML再生成・build/test・commit・push を集約。HANDOVER 再開コマンドに `--check` を追加し、**セッション開始時にずれが見える**ようにした。release.sh 自身はクリーンエクスポートから除外
 
+## 2026-09-04 | build | 共通基盤一本化（柱1）— okf_core を姉妹版と共有／release.sh に同一性照合
+- 姉妹版 oya-inai-keikaku-soudan と検査コードを2箇所にコピーした状態でずれていた（本 Vault の quotepath 修正が姉妹版に届いていない等）。片方の修正が他方に届かない構造そのものを直した。方針は河原さん承認: **正本は姉妹版・okf-core は別リポにしない・ファイルコピー＋ハッシュ照合（submodule 不使用）**
+- **Step 1**: 共通検査（フロントマター・機微ゲート・鮮度・PII・allowlist・CLI）を `scripts/okf_core.py` へ。本 Vault の `okf_lint.py` は koe / sentaku / fushime・日記凍結・原本と読み取りの検査だけを `okf_core.Config` で注入する薄い層に（537行→約230行）。`test_okf_core.py`（共通・25ケース＋4シナリオ）を追加。記入例の一時 Vault で lint 出力・allowlist が前後同一、回帰テスト 32ケース＋4シナリオ green。姉妹版が作ったパッチ（docs/phase-common-step1-oya-iru.patch）を承認のうえ適用（fc9576c）
+- **Step 2**: `release.sh` §0b が okf_core.py / test_okf_core.py を姉妹版と sha256 で照合。ずれがあれば --check は exit 1、--apply/--publish は停止。片方だけ変えると両側が検出することを実確認。あわせて公開前点検に test_okf_core、コミット文の `${STAMP}`（全角括弧が変数名に取り込まれる）、1件のとき「0 件」と出る件数表示を修正（d5ebd0c）。パッチ適用で release.sh の実行権限が落ちたため復旧（f3b197f）
+- 公開コピーへ `--apply`（2135cbe。push は河原さんの判断）。`./scripts/release.sh` は「ずれなし・下流は最新」
+- **Step 3**（姉妹版側）: 未決論点だった姉妹版 pre-commit の quotepath の穴を、姉妹版の test_precommit.sh で再現→修正→green。本 Vault の未決論点を解消
+- 判断の記録: 姉妹版の release.sh の公開前点検は本 Vault の「電話番号なし」を流用せず okf_lint の PII_PATTERNS（到達先軸）を使う——姉妹版は公的機関の窓口番号を wiki/public-systems に意図して載せているため。姉妹版で開発メタ文書の除外を拡張子で書いていたため `.patch` が公開コピーへ流れかけ、公開前点検が止めた（除外は接頭辞で書く、が教訓）
+
 ## （導入日を記入） | setup | Vault 導入
 - oya-iru-wiki テンプレートから導入。
 - 実施: lint 初回実行 / pre-commit 有効化 / AGENTS.md 環境調整（スケジュールタスク登録）→ docs/導入手順.md
