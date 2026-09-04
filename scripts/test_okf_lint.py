@@ -24,6 +24,7 @@ import tempfile
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 LINT = os.path.join(HERE, "okf_lint.py")
+CORE = os.path.join(HERE, "okf_core.py")   # okf_lint.py が import する共通核。一緒にコピーする
 
 FM = """---
 type: {type}
@@ -283,6 +284,7 @@ def make_vault(prefix):
     tmp = tempfile.mkdtemp(prefix=prefix)
     os.makedirs(os.path.join(tmp, "scripts"))
     shutil.copy(LINT, os.path.join(tmp, "scripts", "okf_lint.py"))
+    shutil.copy(CORE, os.path.join(tmp, "scripts", "okf_core.py"))
     os.makedirs(os.path.join(tmp, "wiki"), exist_ok=True)
     return tmp
 
