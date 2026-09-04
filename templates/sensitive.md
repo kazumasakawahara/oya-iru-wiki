@@ -17,6 +17,10 @@ last_confirmed: YYYY-MM-DD   # 記述が現状に合うと読み直して確か�
 confirmed_by: 親が確認
 provided_by: 親
 share_scope: origin-only
+# 時点の2軸（任意。schema-common.md §C）。使うときは行頭の # を外す。値の後ろに # のコメントを書かない（lint が値の一部として読む）
+# valid_from: YYYY-MM-DD
+# valid_until: YYYY-MM-DD
+# valid_until_reason: ""
 ---
 
 # {{タイトル}}

@@ -18,6 +18,8 @@ okf_core.lint / okf_core.main をプロセス内で走らせる。Vault 固有�
     - person_id 必須型・日付必須型・日付書式（Config で注入した型に効く）
     - 出所と宛先の語彙、source_hash の形式
     - 鮮度（欠落・超過・不正な確認手段・last_validated エイリアス）
+    - 時点の2軸（valid_from / valid_until の矛盾は ERROR、contradicts で指された
+      ページの valid_until 未記入は WARN、終了した事実は鮮度を問わない）
     - 終了コード（ERROR=2 / WARN のみ=1 / --gate は WARN で 0 / 空 Vault は 0）
     - page_check / vault_checks / unknown_type_hint のフックが呼ばれる
 """
@@ -25,6 +27,7 @@ okf_core.lint / okf_core.main をプロセス内で走らせる。Vault 固有�
 import contextlib
 import io
 import os
+import re
 import shutil
 import sys
 import tempfile
@@ -163,7 +166,132 @@ CASES = [
     ("wiki/concepts/C_stale.md",
      page("concept", "internal", "本文").replace("status: active", "status: stale"),
      {"superseded_by"}),
+    # --- 時点の2軸（valid_from / valid_until / superseded_by。柱2）---
+    ("wiki/protocols/PR_2軸正常.md",
+     page("protocol", "internal", "本文",
+          extra="valid_from: 2026-01-01\nlast_confirmed: 2999-01-01\n"),
+     set()),
+    ("wiki/protocols/PR_期間逆転.md",
+     page("protocol", "internal", "本文",
+          extra="valid_from: 2026-05-01\nvalid_until: 2026-04-01\n"
+                'superseded_by: "[[PR_確認超過]]"\n').replace("status: active", "status: stale"),
+     {"valid_from が valid_until より後"}),
+    ("wiki/protocols/PR_始点が記録日より後.md",
+     page("protocol", "internal", "本文",
+          extra="valid_from: 2027-01-01\nlast_confirmed: 2999-01-01\n"),
+     {"valid_from が created より後"}),
+    ("wiki/protocols/PR_終了なのにactive.md",
+     page("protocol", "internal", "本文",
+          extra='valid_until: 2026-01-01\nvalid_until_reason: "GH 転居"\n'),
+     {"status が active"}),
+    ("wiki/protocols/PR_終了理由なし.md",
+     page("protocol", "internal", "本文",
+          extra="valid_until: 2026-01-01\n").replace("status: active", "status: stale"),
+     {"valid_until_reason"}),
+    ("wiki/protocols/PR_置き換え先不在.md",
+     page("protocol", "internal", "本文",
+          extra='superseded_by: "[[PR_存在しない]]"\n').replace("status: active", "status: stale"),
+     {"superseded_by の指し先"}),
+    ("wiki/concepts/C_置き換え先ありでactive.md",
+     page("concept", "internal", "本文", extra='superseded_by: "[[PR_確認超過]]"\n'),
+     {"stale でない"}),
+    ("wiki/protocols/PR_2軸書式.md",
+     page("protocol", "internal", "本文",
+          extra="valid_from: 2026/01/01\nlast_confirmed: 2999-01-01\n"),
+     {"YYYY-MM-DD 形式でない"}),
+    # 終了した事実は鮮度を問わない（valid_until があれば staleAfter 超過でも WARN しない）
+    ("wiki/protocols/PR_終了済みは鮮度不問.md",
+     page("protocol", "internal", "本文",
+          extra='valid_until: 2020-01-01\nvalid_until_reason: "GH 転居"\n'
+                "last_confirmed: 2020-01-01\n").replace("status: active", "status: review"),
+     set()),
+    # contradicts で指された現在の主張型は valid_until を書く契機（WARN）
+    ("wiki/triggers/TG_否定された.md",
+     page("trigger", "internal", "本文", extra="last_confirmed: 2999-01-01\n"),
+     {"contradicts で指されている"}),
+    ("wiki/trials/T_否定する.md",
+     page("trial", "internal", "本文",
+          extra='person_id: "P_001"\ntrial_date: 2026-01-01\nprovided_by: "家族"\n'
+                "contradicts:\n  - \"[[TG_否定された]]\"\n"),
+     set()),
 ]
+
+
+def _yaml_values(text, key):
+    """最初の ```yaml ブロックから `key: a | b | c   # …` の値の集合を返す。無ければ None。"""
+    m = re.search(r"```yaml\n(.*?)```", text, re.S)
+    for line in (m.group(1) if m else "").splitlines():
+        if line.startswith(key + ":"):
+            val = line.split(":", 1)[1].split("#", 1)[0]
+            return {v.strip() for v in val.split("|") if v.strip()}
+    return None
+
+
+def check_declarations(failures):
+    """宣言（schema-common.md / schema.md）と検証（okf_core / okf_lint の Config）の突き合わせ。
+
+    書いてあることと守られていることは別（scripts/README.md）。語彙・目安日数・必須項目が
+    文書とコードでずれたら、ここで止まる。Vault 固有の語彙は okf_lint.py の CONFIG と
+    その Vault の schema.md §1 を比べる（okf_lint.py が無い環境では省略）。
+    """
+    vault = core.vault_root(__file__)
+    common_path = os.path.join(vault, "schema-common.md")
+    if not os.path.isfile(common_path):
+        failures.append("schema-common.md が Vault ルートにない（共通宣言の正本。okf_core と同じく姉妹版と同一内容）")
+        return
+    with open(common_path, encoding="utf-8") as f:
+        common = f.read()
+
+    for key, expected in (("status", core.VALID_STATUS),
+                          ("sensitivity", core.VALID_SENSITIVITY),
+                          ("share_scope", core.VALID_SHARE_SCOPE)):
+        declared = _yaml_values(common, key)
+        if declared != set(expected):
+            failures.append(f"宣言ずれ: schema-common.md の `{key}` {declared} ≠ okf_core {set(expected)}")
+
+    required = set(re.findall(r"^\| `(\w+)` \| ○ \|", common, re.M))
+    if required != set(core.REQUIRED_FIELDS):
+        failures.append(f"宣言ずれ: schema-common.md の必須項目 {required} ≠ okf_core.REQUIRED_FIELDS")
+
+    stale = {t: int(d) for t, d in re.findall(r"^\| `([\w-]+)` \| \*\*(\d+)日\*\*", common, re.M)}
+    if stale != core.BASE_STALE_AFTER_DAYS:
+        failures.append(f"宣言ずれ: schema-common.md §B-2 の目安 {stale} ≠ okf_core.BASE_STALE_AFTER_DAYS")
+
+    for fld in ("valid_from", "valid_until", "valid_until_reason", "superseded_by"):
+        if f"`{fld}`" not in common:
+            failures.append(f"宣言ずれ: schema-common.md に `{fld}` の説明がない")
+
+    # --- Vault 固有: schema.md §1 の語彙 ↔ okf_lint.py の CONFIG ---
+    lint_path = os.path.join(HERE, "okf_lint.py")
+    schema_path = os.path.join(vault, "schema.md")
+    if not (os.path.isfile(lint_path) and os.path.isfile(schema_path)):
+        return
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("okf_lint_under_test", lint_path)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    cfg = getattr(mod, "CONFIG", None)
+    if cfg is None:
+        failures.append("okf_lint.py に CONFIG がない（Vault の語彙を突き合わせられない）")
+        return
+    with open(schema_path, encoding="utf-8") as f:
+        schema = f.read()
+    for key, actual in (("provided_by", cfg.provided_by),
+                        ("confirmed_by", cfg.confirmed_by),
+                        ("type", cfg.types)):
+        declared = _yaml_values(schema, key)
+        if declared is None:
+            failures.append(f"宣言ずれ: schema.md §1 の yaml 例に `{key}:` の行がない")
+        elif declared != set(actual):
+            failures.append(
+                f"宣言ずれ: schema.md §1 の `{key}` と okf_lint.py の CONFIG が違う "
+                f"（schema のみ: {sorted(declared - set(actual))} / CONFIG のみ: {sorted(set(actual) - declared)}）")
+    for t, days in cfg.stale_after_days.items():
+        if t in core.BASE_STALE_AFTER_DAYS:
+            if days != core.BASE_STALE_AFTER_DAYS[t]:
+                failures.append(f"宣言ずれ: Config が基底型 `{t}` の目安を {days} 日に上書きしている（基底は schema-common）")
+        elif f"| `{t}` | **{days}日**" not in schema:
+            failures.append(f"宣言ずれ: Vault 固有型 `{t}` の目安 {days} 日が schema.md §6-2 の表にない")
 
 
 def make_vault(prefix, cases):
@@ -272,19 +400,24 @@ def main():
     finally:
         shutil.rmtree(tmp4, ignore_errors=True)
 
+    # --- 宣言と検証の突き合わせ（schema-common.md ↔ okf_core、schema.md ↔ okf_lint CONFIG）---
+    check_declarations(failures)
+
     print("=== okf_core 回帰テスト（姉妹 Vault 共通）===")
     if failures:
         for f in failures:
             print(f"  FAIL  {f}")
         print(f"\n{len(failures)} 件失敗")
         return 1
-    print(f"  {len(CASES)} ケース＋4シナリオ全て合格")
+    print(f"  {len(CASES)} ケース＋5シナリオ全て合格")
     print("  - 公的機関の連絡先を誤検出せず、個人への到達経路を検出する")
     print("  - 機微ゲート・allowlist fail-closed が機能する")
     print("  - Config で注入した person_id 必須型・日付必須型・語彙に効く")
     print("  - 鮮度（欠落・超過・不正な確認手段）を WARN し、last_validated を受理する")
+    print("  - 時点の2軸の矛盾を ERROR、contradicts 後の valid_until 未記入を WARN、終了した事実は鮮度不問")
     print("  - 終了コード（ERROR=2 / WARN=1 / --gate は WARN で 0 / 空 Vault は 0）")
     print("  - page_check / vault_checks / unknown_type_hint のフックが呼ばれる")
+    print("  - 宣言（schema-common.md / schema.md §1）と検証（okf_core / CONFIG）の語彙・目安・必須項目が一致する")
     return 0
 
 

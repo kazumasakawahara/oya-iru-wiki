@@ -87,6 +87,15 @@
 - **Step 3**（姉妹版側）: 未決論点だった姉妹版 pre-commit の quotepath の穴を、姉妹版の test_precommit.sh で再現→修正→green。本 Vault の未決論点を解消
 - 判断の記録: 姉妹版の release.sh の公開前点検は本 Vault の「電話番号なし」を流用せず okf_lint の PII_PATTERNS（到達先軸）を使う——姉妹版は公的機関の窓口番号を wiki/public-systems に意図して載せているため。姉妹版で開発メタ文書の除外を拡張子で書いていたため `.patch` が公開コピーへ流れかけ、公開前点検が止めた（除外は接頭辞で書く、が教訓）
 
+## 2026-09-04 | build | 共通基盤・柱2（時点の2軸）— schema-common.md と valid_from / valid_until
+- 柱1の土台の上で「時点の2軸」を導入した。事実時間（valid_from / valid_until）と知得時間（created / last_confirmed / confirms / contradicts）。決定22件は姉妹版 docs/phase-common-2-implementation-plan.md §3（support-db の事実時間軸と揃えてある）
+- **Step 1**（姉妹版側）: 共通宣言を `schema-common.md` に切り出し（正本は姉妹版・同一内容）、okf_core に構造矛盾の検査（始点＞終点・始点＞created・終了しているのに active・終了理由なし・superseded_by の指し先不在や status 不整合 → ERROR。contradicts で指されたのに valid_until 空 → WARN。valid_until のある事実は鮮度不問）。TDD で RED→GREEN
+- **Step 2**（8390fb3）: 本 Vault に schema-common.md・okf_core・test_okf_core を同一コピー。schema.md §1・§6 を「共通からの差分」に書き換え、差分表の列を「姉妹版」から「共通」へ。`provided_by` の「後見人」（lint は受理していたが宣言に無かった）と `confirmed_by` の「家族に確認」を yaml 例に明記。test_okf_core に「宣言 ↔ 検証」の突き合わせが入り、このずれを機械で検出するようになった。release.sh §0b の照合対象に schema-common.md を追加。記入例8ページに valid_from
+- **Step 3**（fccced5）: templates/ 5型に伏せた任意欄、AGENTS.md に「原本の日付」（受付日で代用しない）・締めの 9b（valid_from の提案はせんたく・ふしめ由来に限る／valid_until は尋ねるだけ）・読むときの約束、親マニュアル 7-6、記入例の仕分け宣言に「原本の日付」
+- **Step 4**: AGENTS.md の lint 節の参照先を schema-common.md §B に、`--gate` の説明を「ERROR（機微・構造矛盾）」に。本エントリと HANDOVER
+- 判断の記録: Wiki ↔ 支援DB の対訳表は姉妹版 CLAUDE.md §9-2 だけに置き、本 Vault には置かない（本 Vault に支援DB 連携はなく、置くと誤解を招く）。自作パーサはフロントマターの値に続く行内コメントを値の一部として読むため、日付欄には行内コメントを書かない（マニュアル 7-6 に明記）
+- 公開コピー・nest-webpage は未反映（`./scripts/release.sh --apply` / `--publish` は河原さんの判断）。共通核の照合は「ずれなし」
+
 ## （導入日を記入） | setup | Vault 導入
 - oya-iru-wiki テンプレートから導入。
 - 実施: lint 初回実行 / pre-commit 有効化 / AGENTS.md 環境調整（スケジュールタスク登録）→ docs/導入手順.md

@@ -17,6 +17,10 @@ confirmed_by: 親が確認   # 親が確認 | 本人に確認 | 支援者に確�
 evidence: []   # 根拠となる sentaku / trial へのリンク（例: "[[ST_...]]"）
 provided_by: 親
 share_scope: consent-required
+# 時点の2軸（任意。schema-common.md §C）。使うときは行頭の # を外す。値の後ろに # のコメントを書かない（lint が値の一部として読む）
+# valid_from: YYYY-MM-DD
+# valid_until: YYYY-MM-DD
+# valid_until_reason: ""
 ---
 
 # こえのプロファイル — {{呼び名}}

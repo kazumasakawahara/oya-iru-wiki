@@ -18,6 +18,10 @@ last_confirmed: YYYY-MM-DD   # このきっかけが今も当てはまると確�
 confirmed_by: 親が確認   # 記録のみ | 本人に確認 | 親が確認 | 支援者に確認 | 実地で確認
 provided_by: 親
 share_scope: consent-required
+# 時点の2軸（任意。schema-common.md §C）。使うときは行頭の # を外す。値の後ろに # のコメントを書かない（lint が値の一部として読む）
+# valid_from: YYYY-MM-DD
+# valid_until: YYYY-MM-DD
+# valid_until_reason: ""
 ---
 
 # {{きっかけの名前}}

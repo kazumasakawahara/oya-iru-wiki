@@ -15,6 +15,7 @@ sensitivity: internal
 person_id: "P_900"
 protocol_domain: bath
 last_confirmed: 2026-08-05
+valid_from: 2026-08-05
 confirmed_by: 親が確認
 provided_by: 親
 share_scope: consent-required

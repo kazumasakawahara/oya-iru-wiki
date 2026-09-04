@@ -1,6 +1,6 @@
 # schema — 構造ルール
 
-このファイルは Vault の構造ルール（日記の書式・フロントマター仕様・ページ型・対訳語彙・Sensitivity Level・命名規約・鮮度）を定義します。AI への操作指示の正典は AGENTS.md、存在理由の正典は purpose.md です。AGENTS.md と矛盾が生じた場合は AGENTS.md を優先し、本ファイルを更新してください。
+このファイルは Vault の構造ルール（日記の書式・フロントマター仕様・ページ型・対訳語彙・Sensitivity Level・命名規約・鮮度）を定義します。AI への操作指示の正典は AGENTS.md、存在理由の正典は purpose.md です。AGENTS.md と矛盾が生じた場合は AGENTS.md を優先し、本ファイルを更新してください。 姉妹版と共通の定義（フロントマター・鮮度・時点の2軸）は `schema-common.md`（正本は姉妹版、同一内容）に置き、本ファイルはそれからの差分と本Vault固有の型を書く（2026-09-04）。
 
 ---
 
@@ -45,10 +45,12 @@
 
 ## 1. 共通フロントマター（wiki/ 全ページ必須）
 
+共通の定義（必須7項目・各フィールドの意味・status の遷移・二つのコールアウト）は **[[schema-common]] §A** にある（姉妹版 oya-inai-keikaku-soudan と同一内容。正本は姉妹版）。本節はそれを前提に、本Vaultの型一覧と語彙、および完成形の例だけを書く。
+
 ```yaml
 ---
 type: person | koe | sentaku | fushime | trial | protocol | trigger | concept | entity | ecomap | sensitive | public-system | procedure | query | review
-created: YYYY-MM-DD
+created: YYYY-MM-DD          # 記録日（不変。schema-common §A-2）
 updated: YYYY-MM-DD
 sources:
   - "[[raw/path/ファイル名]]"
@@ -62,34 +64,34 @@ sensitivity: public | internal | sensitive | restricted
 person_id: "P_001"   # 該当しないページは省略
 lifestage: 幼児期 | 学齢期 | 思春期 | 移行期 | 成人期   # 個人紐づけ型で推奨
 last_confirmed: YYYY-MM-DD   # この情報が「まだ正しい」と確かめた日（§6）。現況を主張する型では推奨
-confirmed_by: 記録のみ | 本人に確認 | 親が確認 | 支援者に確認 | 実地で確認   # 確認の手段
+confirmed_by: 記録のみ | 本人に確認 | 親が確認 | 家族に確認 | 支援者に確認 | 実地で確認   # 確認の手段（「家族に確認」は姉妹版との互換）
+valid_from: YYYY-MM-DD       # この事実が成立した日（schema-common §C）。不明なら書かない
+valid_until: YYYY-MM-DD      # 当てはまらなくなった日。親が裁定して書く（AI は推定しない）
+valid_until_reason: "終了の理由1行"   # valid_until を書くとき、superseded_by が無ければ必須
 superseded_by: "[[...]]"     # status: stale のとき。どの記録に置き換わったか
-provided_by: 本人 | 親 | 家族 | 園・学校 | 事業所 | 医療機関 | 行政 | 会議 | 相談支援   # 情報の出所（§7）。AI が保存先の棚から推定して付与
+provided_by: 本人 | 親 | 家族 | 園・学校 | 事業所 | 医療機関 | 行政 | 会議 | 相談支援 | 後見人   # 情報の出所（§7）。AI が保存先の棚から推定して付与
 provided_by_detail: "放デイ○○（[[E_放デイ○○]] 参照）"   # 任意。具体名は entity 参照で
 share_scope: team | consent-required | origin-only   # 宛先境界。欠落時は consent-required とみなす
 source_hash: "64桁の16進（sha256）"   # 任意。keikaku-soudan と同一原本を突き合わせるための橋
 ---
 ```
 
-### 姉妹版（oya-inai-keikaku-soudan）からの変更点
+### 共通からの差分（本Vault固有）
 
-| 項目 | 姉妹版 | 本Vault |
-|------|--------|---------|
-| 型の構成 | 15型（plan / monitoring / meeting / 他12型） | **15型（koe / sentaku / fushime ＋ 継承12型）**。plan / monitoring / meeting は非搭載（並走する keikaku-soudan 側の正本と重複記録しない） |
-| `confirmed_by` の語彙 | 家族に確認 | **親が確認**（本Vaultの一人称は親。「家族に確認」も互換のため受理） |
-| `provided_by` の語彙 | 後見人を含む8値 | **親・園・学校を含む9値**（上記）。移行期以降に後見人が現れたら追加する |
+| 項目 | 共通（schema-common） | 本Vault |
+|------|----------------------|---------|
+| 型の構成 | 継承12型（person / trial / protocol / trigger / concept / entity / ecomap / sensitive / public-system / procedure / query / review） | **15型（koe / sentaku / fushime ＋ 継承12型）**。plan / monitoring / meeting は非搭載（並走する keikaku-soudan 側の正本と重複記録しない） |
+| `tags` の例 | Vault ごと | 子育て / 知的障害 |
 | `lifestage` | なし | **追加**（個人紐づけ型で推奨。幼児期〜成人期の5値） |
+| `confirmed_by` の語彙 | Vault ごと | 記録のみ / 本人に確認 / **親が確認** / 家族に確認 / 支援者に確認 / 実地で確認（本Vaultの一人称は親。「家族に確認」は姉妹版との互換のため受理） |
+| `provided_by` の語彙 | Vault ごと | 本人 / **親** / 家族 / **園・学校** / 事業所 / 医療機関 / 行政 / 会議 / 相談支援 / 後見人 の10値（後見人は移行期以降に現れる。lint は当初から受理していたため宣言もそろえた 2026-09-04） |
+| `review` の判断主体 | 管理者 | 親（`wiki/reviews/` と連動） |
+| `source_hash` の相手先 | 同一原本の突き合わせ | keikaku-soudan |
+| `valid_from` / `valid_until` を書く人 | 人 | 親。`valid_from` は AI が提案してよい範囲がある（§6-5）。`valid_until` は AI が推定しない |
 
-> **sensitivity は「深さ」・share_scope は「宛先」の直交2軸。** `origin-only` のページは sensitivity によらず外部共有一覧（--allowlist）から無条件に除外される（fail-closed）。日記の「おもったこと」欄由来の記述を wiki に上げる場合は原則 `origin-only`（親元に留める）から始める。
+> **sensitivity は「深さ」・share_scope は「宛先」の直交2軸**（schema-common §A-3）。本Vaultでは、日記の「おもったこと」欄由来の記述を wiki に上げる場合は原則 `origin-only`（親元に留める）から始める。
 >
-> **`updated` と `last_confirmed` は別物。** 誤字修正でも `updated` は動くが、それは「この情報が今も正しい」ことを保証しない。読み返して「まだこの通り」と確かめたなら、本文を変えなくても `last_confirmed` を更新する。**確かめていないのに更新してはならない。**
-
-### status の遷移
-
-- `draft` — 作成中。レビュー前
-- `active` — 現役で使われている記録
-- `review` — 親の判断待ち（`wiki/reviews/` と連動）
-- `stale` — 過去の仮説。本人の成長・変化で現状と乖離。**削除せず保持する**。置き換え先があれば `superseded_by` で示す
+> **`updated` と `last_confirmed` は別物**（schema-common §A-3）。**確かめていないのに更新してはならない。**
 
 ---
 
@@ -267,28 +269,25 @@ sensitivity: internal         # internal 以上
 
 ## 6. 鮮度 — 確認日と賞味期限
 
-このWikiは「作った瞬間」ではなく「**読まれる瞬間**」——新しい支援者が本人と出会う場面——に正しくなければ意味がない。子どもは大人よりずっと速く変化するため、**現在の状態を主張する型**には賞味期限の考え方を入れる。
+原理（型の二分類・staleAfter の基底値・確認と否定の連鎖・三分法・時点の2軸）は **[[schema-common]] §B・§C** にある。本節は本Vaultでの型の割り当てと、定期便の実装だけを書く。このWikiが正しくなければならない「読まれる瞬間」とは、新しい支援者が本人と出会う場面である。子どもは大人よりずっと速く変化する。
 
-### 6-1 型の二分類
+### 6-1 型の二分類（本Vaultの割り当て）
 
 | 分類 | 型 | 鮮度検査 |
 |------|-----|---------|
-| **現在の主張**(陳腐化する) | person / **koe** / protocol / trigger / ecomap / sensitive | **対象**。`last_confirmed` の欠落・期限超過を lint が WARN |
+| **現在の主張**(陳腐化する) | person / **koe** / protocol / trigger / ecomap / sensitive | **対象**。`last_confirmed` の欠落・期限超過を lint が WARN（`valid_until` が書かれたページは対象外） |
 | **出来事の記録**（証拠。日付に固定される） | **sentaku / fushime** / trial / query | **対象外**。必須日付（sentaku_date / occurred_on / trial_date / query_date）が時点を固定する |
 
 ### 6-2 型別の確認の目安（staleAfter）
 
+基底値（person 90 / protocol 90 / trigger 180 / sensitive 180 / ecomap 30）は schema-common §B-2 のとおり。本Vaultの追加型:
+
 | type | 目安 | 理由 |
 |------|------|------|
-| `person` | **90日** | 現況（生活・園学校等）は変わる |
 | `koe` | **90日** | 意思表出のしかたは成長とともに変わる。バイブルの心臓が古いのが一番危険 |
-| `protocol` | **90日** | 「今も機能している手順」でなければ手順の意味がない |
-| `trigger` | **180日** | 好き・苦手のきっかけも入れ替わる |
-| `sensitive` | **180日** | 半年ごとに読み直す |
-| `ecomap` | **30日** | 月単位スナップショットが前提 |
 
-- 子どもは変化が速いため、実運用で「90日でも遅い」と分かった型は短縮する（Phase 2 の lint 定数確定時、および実証フェーズで見直し）
-- 対象は `status: active` / `review` のみ。数値を変えるときは**この表と `scripts/okf_lint.py` の `STALE_AFTER_DAYS` を同時に**直す
+- 子どもは変化が速いため、実運用で「90日でも遅い」と分かった型は短縮する（実証フェーズで見直し）。基底型の数値を変えるときは schema-common の表と `scripts/okf_core.py` の `BASE_STALE_AFTER_DAYS` を、`koe` は上の表と `scripts/okf_lint.py` の Config `stale_after_days` を同時に直す
+- 対象は `status: active` / `review` のみ
 
 ### 6-3 鮮度更新の定期便は「定期 ingest」に同乗する
 
@@ -296,13 +295,20 @@ sensitivity: internal         # internal 以上
 
 1. ingest の締めに AI は必ず尋ねる:「この1ヶ月の日記から、◯◯の手順書と△△のきっかけは今も合っていそうです。まだこの通りですか？」
 2. 親が「確かめた・まだこの通り」と答えたものだけ `last_confirmed` を更新する（confirmed_by: 親が確認）
-3. 日記・trial が「もう合わない」ことを示していたら `contradicts` に記録し、指された側を見直す（`status: review`・改訂・`stale`＋`superseded_by`）
+3. 日記・trial が「もう合わない」ことを示していたら `contradicts` に記録し、指された側を見直す（`status: review`・改訂・`stale`＋`superseded_by`）。あわせて「いつまで当てはまっていたか」を親に尋ね、親の一言で `valid_until` を書く（schema-common §B-3・§C）。lint は「contradicts で指されたが valid_until が空」を WARN で知らせる
 
 **確かめていないのに `last_confirmed` を更新してはならない**（既存ページへの一括バックフィル禁止も同じ理由）。独立した「振り返り儀式」を親に課さない——鮮度は日記と ingest のリズムの中で回る。
 
-### 6-4 鮮度は WARN、機微は ERROR
+### 6-4 三分法
 
-鮮度切れは ERROR にしない（古い記録は危険信号だが、機微情報の漏出とは性質が違う）。`--gate` は ERROR の有無だけを終了コードに反映するため、鮮度で pre-commit・起動時ゲートは止まらない。止めない代わりに、lint と AI の声かけで利用時点に見えるようにする。
+鮮度は WARN、機微は ERROR、構造矛盾は ERROR（schema-common §B-4）。`--gate` は ERROR の有無だけを終了コードに反映するため、鮮度で pre-commit・起動時ゲートは止まらない。止めない代わりに、lint と AI の声かけで利用時点に見えるようにする。
+
+### 6-5 時点の2軸（本Vaultの運用）
+
+- `valid_from` / `valid_until` を書くのは親。チャット原則（PLAN §12-7）のもと、AI は「いつからそうなの？」と聞く形で確定を取る
+- AI が `valid_from` を**提案**してよいのは、親が確定行為をした出来事（せんたく・ふしめ）に由来する事実に限る。こえ全般には広げない。記入は親の一言で確定する
+- `valid_until` は AI が推定して書かない。終了の契機は3つ: `contradicts`、本人・園学校・事業所からの報告、定期 ingest で「もう当てはまらない」と判断。いずれも親が裁定し、`superseded_by` か `valid_until_reason` を残す
+- raw/ の仕分け宣言に「原本の日付」欄を持つ。原本に日付がなければ `不明` と明示し、受付日で代用しない（発生日＝事実時間、`created`＝知得時間）
 
 ---
 
