@@ -185,6 +185,20 @@ ingest 中に人間判断が必要な項目は wiki/reviews/ に積む。アク�
 5. **読むときの約束を守る**（schema-common.md §C-4・§3-2）: `valid_until` のある事実を現在の事実として答えない。`valid_until` を推定して書かない
 6. 親に「今日は何をしますか？（取り込み ingest ／ 質問 query ／ 点検 lint ／ セットアップ）」を尋ねる。ただしスケジュールタスク起動時は尋ねず ingest を実行する
 
+**必要なときに読む文書**（起動時には読まない。該当する場面で開く。姉妹版 AGENTS.md §5 と同形）:
+
+| 場面 | 読む文書 |
+|---|---|
+| ページを新規作成・編集する | schema-common.md §A、schema.md §1（語彙）・§3（koe / sentaku / fushime）・§4（継承型）・§5（命名・配置） |
+| 日記を wiki に編む（事実と思いの分離） | schema.md §0・§2、purpose.md §3-10・A-10 |
+| sensitive 以上を扱う | schema.md §5、purpose.md §3-0 |
+| 鮮度 WARN・時点の2軸に対応する | schema-common.md §B・§C、schema.md §6 |
+| 写真・PDF など機械が読めない資料を受け取った | schema.md §7 |
+| レビュー項目を起票する | 本ファイル §4 |
+| 制度ウォッチ・年齢イベント | docs/watchlist.md、docs/年齢イベント表.md |
+| keikaku-soudan・支援DB と連携する | 本ファイル §8、docs/連携マッピング表.md |
+| 環境固有の設定（スケジュール・ファイル操作・AI 選択） | 本ファイル §9、docs/導入手順.md |
+
 ---
 
 ## §6 Vault 構造（概要）

@@ -96,6 +96,12 @@
 - 判断の記録: Wiki ↔ 支援DB の対訳表は姉妹版 CLAUDE.md §9-2 だけに置き、本 Vault には置かない（本 Vault に支援DB 連携はなく、置くと誤解を招く）。自作パーサはフロントマターの値に続く行内コメントを値の一部として読むため、日付欄には行内コメントを書かない（マニュアル 7-6 に明記）
 - 公開コピー・nest-webpage は未反映（`./scripts/release.sh --apply` / `--publish` は河原さんの判断）。共通核の照合は「ずれなし」
 
+## 2026-09-05 | build | 共通基盤・柱5（操作文書の減量と AI 中立化）— 姉妹版が AGENTS.md 正典＋シムの形に
+- 姉妹版 oya-inai-keikaku-soudan の CLAUDE.md（706 行・57KB。起動時に purpose / schema と併せて約 120KB を読んでいた）を、本 Vault と同じ **AGENTS.md 正典＋CLAUDE.md / GEMINI.md シム**に改稿（199 行・20KB 以下）。設計哲学は purpose.md、ページ型・Sensitivity・命名は schema.md、レビュー／グラフ洞察／支援DB 連携は docs/ に溶かし、起動時に読むのはガードレール・手順・起動時挙動だけにした。§0 AI 要件は本 Vault の §0 を姉妹版の語彙で取り込んだもの
+- **本 Vault への波及（Step 3）**: AGENTS.md §5 末尾に「必要なときに読む文書」表を追加（姉妹版 docs/phase-common-3-step3-oya-iru.patch を承認のうえ適用）。それ以外は無変更——本 Vault の AGENTS.md は 2026-08-13 起草時から AI 中立で、作者環境への参照も無い。適用後 `stat` で scripts/ の権限を確認: 変化なし。gate・test_okf_core・test_okf_lint green
+- 判断の記録: 姉妹版で「作者」→「使い手」の置換を AGENTS.md 本文に限った理由は、schema-common §A-4 が review の判断主体を「計画相談版は作者、親いる版は親」と定義しており、共通核を変えずに片方の schema だけ変えると宣言がずれるため。広げるなら両 Vault と schema-common を同時に。姉妹版の参照先検査（test_core_docs.py。「AGENTS.md §N-M」が実在する節を指すか）は本 Vault に未導入
+- 公開コピー・nest-webpage は未反映（`./scripts/release.sh --apply` / `--publish` は河原さんの判断）。共通核（okf_core / test_okf_core / schema-common）の照合は「ずれなし」
+
 ## （導入日を記入） | setup | Vault 導入
 - oya-iru-wiki テンプレートから導入。
 - 実施: lint 初回実行 / pre-commit 有効化 / AGENTS.md 環境調整（スケジュールタスク登録）→ docs/導入手順.md
