@@ -69,7 +69,7 @@ valid_from: YYYY-MM-DD       # この事実が成立した日（schema-common §
 valid_until: YYYY-MM-DD      # 当てはまらなくなった日。親が裁定して書く（AI は推定しない）
 valid_until_reason: "終了の理由1行"   # valid_until を書くとき、superseded_by が無ければ必須
 superseded_by: "[[...]]"     # status: stale のとき。どの記録に置き換わったか
-provided_by: 本人 | 親 | 家族 | 園・学校 | 事業所 | 医療機関 | 行政 | 会議 | 相談支援 | 後見人   # 情報の出所（§7）。AI が保存先の棚から推定して付与
+provided_by: 本人 | 親 | 家族 | 園・学校 | 事業所 | 医療機関 | 行政 | 会議 | 相談支援 | 後見人   # 情報の出所（schema-common.md §A-2）。AI が保存先の棚から推定して付与
 provided_by_detail: "放デイ○○（[[E_放デイ○○]] 参照）"   # 任意。具体名は entity 参照で
 share_scope: team | consent-required | origin-only   # 宛先境界。欠落時は consent-required とみなす
 source_hash: "64桁の16進（sha256）"   # 任意。keikaku-soudan と同一原本を突き合わせるための橋
